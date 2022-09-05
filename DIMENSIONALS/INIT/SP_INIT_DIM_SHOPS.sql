@@ -1,0 +1,50 @@
+use dw_future_sales
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[SP_INIT_DIM_SHOP]
+	--@ETL_DATE DATETIME = NULL
+AS
+BEGIN
+
+SET NOCOUNT ON;
+SET XACT_ABORT ON;
+
+--IF @ETL_DATE IS NULL SET @ETL_DATE = FORMAT(GETDATE(),'yyyy-MM-dd HH:mm:ss');
+
+-----------------------------------------------------------------------------
+
+-- Transaction begin here
+
+BEGIN TRAN;
+BEGIN TRY;
+
+
+IF EXISTS(SELECT * FROM sys.tables WHERE SCHEMA_NAME(schema_id) LIKE 'dbo' AND name like 'DIM_SHOP')
+   DROP TABLE dw_future_sales.dbo.DIM_SHOP
+
+CREATE TABLE dw_future_sales.dbo.DIM_SHOP (
+	SHOP_KEY INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	SHOP_ID INT ,
+    SHOP_NAME NVARCHAR(250),
+)
+
+COMMIT
+RETURN 0
+END TRY
+BEGIN CATCH
+	ROLLBACK
+	DECLARE @ERRORMESSAGE NVARCHAR(2000)
+	SELECT @ERRORMESSAGE = 'ERROR: ' + ERROR_MESSAGE()
+	RAISERROR(@ERRORMESSAGE, 16, 1)
+END CATCH
+
+-- Transaction end here
+
+END
+GO
+
+EXEC [dbo].[SP_INIT_DIM_SHOP]

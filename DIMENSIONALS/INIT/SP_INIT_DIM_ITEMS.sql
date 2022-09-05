@@ -1,0 +1,52 @@
+use dw_future_sales
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[SP_INIT_DIM_ITEM]
+AS
+BEGIN
+
+SET NOCOUNT ON;
+SET XACT_ABORT ON;
+
+
+-----------------------------------------------------------------------------
+
+-- Transaction begin here
+
+BEGIN TRAN;
+BEGIN TRY;
+
+
+IF EXISTS(SELECT * FROM sys.tables WHERE SCHEMA_NAME(schema_id) LIKE 'dbo' AND name like 'DIM_ITEM')
+   DROP TABLE dw_future_sales.dbo.DIM_ITEM
+
+CREATE TABLE dw_future_sales.dbo.DIM_ITEM (
+	ITEM_KEY INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	ITEM_ID INT,
+    ITEM_NAME NVARCHAR(500),
+    ITEM_CATEGORY_KEY INT FOREIGN KEY REFERENCES dbo.DIM_ITEMS_CAT(ITEM_CATEGORY_KEY),
+    ITEM_CATEGORY_NAME NVARCHAR(250) collate Cyrillic_General_CI_AS_KS,
+)
+
+COMMIT
+RETURN 0
+END TRY
+BEGIN CATCH
+	ROLLBACK
+	DECLARE @ERRORMESSAGE NVARCHAR(2000)
+	SELECT @ERRORMESSAGE = 'ERROR: ' + ERROR_MESSAGE()
+	RAISERROR(@ERRORMESSAGE, 16, 1)
+END CATCH
+
+-- Transaction end here
+
+END
+GO
+
+EXEC [dbo].[SP_INIT_DIM_ITEM]
+GO
+-- drop table dim_item
+-- drop PROCEDURE [dbo].[SP_INIT_DIM_ITEM]
